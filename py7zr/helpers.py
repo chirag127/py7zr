@@ -56,9 +56,7 @@ def calculate_crc32(data: bytes, value: int = 0, blocksize: int = 1024 * 1024) -
 def _get_hash(digest: str):
     if digest not in hashlib.algorithms_available:
         raise ValueError("Unknown digest method for password protection.")
-    if digest == "sha256":
-        return hashlib.sha256()
-    return hashlib.new(digest)
+    return hashlib.sha256() if digest == "sha256" else hashlib.new(digest)
 
 
 def _calculate_key1(password: bytes, cycles: int, salt: bytes, digest: str) -> bytes:
@@ -66,14 +64,13 @@ def _calculate_key1(password: bytes, cycles: int, salt: bytes, digest: str) -> b
     assert cycles <= 0x3F
     if cycles == 0x3F:
         ba = bytearray(salt + password + bytes(32))
-        key: bytes = bytes(ba[:32])
+        return bytes(ba[:32])
     else:
         rounds = 1 << cycles
         m = _get_hash(digest)
         for round in range(rounds):
             m.update(salt + password + round.to_bytes(8, byteorder="little", signed=False))
-        key = m.digest()[:32]
-    return key
+        return m.digest()[:32]
 
 
 def _calculate_key2(password: bytes, cycles: int, salt: bytes, digest: str):
@@ -81,29 +78,30 @@ def _calculate_key2(password: bytes, cycles: int, salt: bytes, digest: str):
     It uses ctypes and memoryview buffer and zero-copy technology on Python."""
     assert cycles <= 0x3F
     if cycles == 0x3F:
-        key: bytes = bytes(bytearray(salt + password + bytes(32))[:32])
-    else:
-        rounds = 1 << cycles
-        m = _get_hash(digest)
+        return bytes(bytearray(salt + password + bytes(32))[:32])
+    rounds = 1 << cycles
+    m = _get_hash(digest)
+
+
+    class RoundBuf(ctypes.LittleEndianStructure):
+        _pack_ = 1
         length = len(salt) + len(password)
 
-        class RoundBuf(ctypes.LittleEndianStructure):
-            _pack_ = 1
-            _fields_ = [
-                ("saltpassword", ctypes.c_ubyte * length),
-                ("round", ctypes.c_uint64),
-            ]
+        _fields_ = [
+            ("saltpassword", ctypes.c_ubyte * length),
+            ("round", ctypes.c_uint64),
+        ]
 
-        buf = RoundBuf()
-        for i, c in enumerate(salt + password):
-            buf.saltpassword[i] = c
-        buf.round = 0
-        mv = memoryview(buf)
-        while buf.round < rounds:
-            m.update(mv)
-            buf.round += 1
-        key = m.digest()[:32]
-    return key
+
+    buf = RoundBuf()
+    for i, c in enumerate(salt + password):
+        buf.saltpassword[i] = c
+    buf.round = 0
+    mv = memoryview(buf)
+    while buf.round < rounds:
+        m.update(mv)
+        buf.round += 1
+    return m.digest()[:32]
 
 
 def _calculate_key3(password: bytes, cycles: int, salt: bytes, digest: str) -> bytes:
@@ -112,7 +110,7 @@ def _calculate_key3(password: bytes, cycles: int, salt: bytes, digest: str) -> b
     assert cycles <= 0x3F
     if cycles == 0x3F:
         ba = bytearray(salt + password + bytes(32))
-        key: bytes = bytes(ba[:32])
+        return bytes(ba[:32])
     else:
         cat_cycle = 6
         if cycles > cat_cycle:
@@ -140,9 +138,7 @@ def _calculate_key3(password: bytes, cycles: int, salt: bytes, digest: str) -> b
                     b"".join([saltpassword + (s + i).to_bytes(8, byteorder="little", signed=False) for i in range(rounds)])
                 )
                 s += rounds
-        key = m.digest()[:32]
-
-    return key
+        return m.digest()[:32]
 
 
 if platform.python_implementation() == "PyPy" or sys.version_info > (3, 6):
@@ -168,11 +164,7 @@ SECOND = timedelta(seconds=1)
 #  changed in the past.)
 
 STDOFFSET = timedelta(seconds=-_time.timezone)
-if _time.daylight:
-    DSTOFFSET = timedelta(seconds=-_time.altzone)
-else:
-    DSTOFFSET = STDOFFSET
-
+DSTOFFSET = timedelta(seconds=-_time.altzone) if _time.daylight else STDOFFSET
 DSTDIFF = DSTOFFSET - STDOFFSET
 
 
@@ -187,16 +179,10 @@ class LocalTimezone(tzinfo):
         return datetime(*args, microsecond=dt.microsecond, tzinfo=self)
 
     def utcoffset(self, dt):
-        if self._isdst(dt):
-            return DSTOFFSET
-        else:
-            return STDOFFSET
+        return DSTOFFSET if self._isdst(dt) else STDOFFSET
 
     def dst(self, dt):
-        if self._isdst(dt):
-            return DSTDIFF
-        else:
-            return ZERO
+        return DSTDIFF if self._isdst(dt) else ZERO
 
     def tzname(self, dt):
         return _time.tzname[self._isdst(dt)]
@@ -274,9 +260,8 @@ def islink(path):
     if sys.version_info >= (3, 8) or sys.platform != "win32" or sys.getwindowsversion()[0] < 6:
         return is_symlink
     # special check for directory junctions which py38 does.
-    if is_symlink:
-        if py7zr.win32compat.is_reparse_point(path):
-            is_symlink = False
+    if is_symlink and py7zr.win32compat.is_reparse_point(path):
+        is_symlink = False
     return is_symlink
 
 
@@ -298,10 +283,7 @@ def readlink(path: Union[str, pathlib.Path], *, dir_fd=None) -> Union[str, pathl
         # Hack to handle a wrong type of results
         if isinstance(res, bytes):
             res = os.fsdecode(res)
-        if isinstance(path, pathlib.Path):
-            return pathlib.Path(res)
-        else:
-            return res
+        return pathlib.Path(res) if isinstance(path, pathlib.Path) else res
     elif not os.path.exists(str(path)):
         raise OSError(22, "Invalid argument", path)
     return py7zr.win32compat.readlink(path)
@@ -317,10 +299,7 @@ class MemIO:
         return self._buf.write(data)
 
     def read(self, length: Optional[int] = None) -> bytes:
-        if length is not None:
-            return self._buf.read(length)
-        else:
-            return self._buf.read()
+        return self._buf.read(length) if length is not None else self._buf.read()
 
     def close(self) -> None:
         self._buf.seek(0)
@@ -358,10 +337,7 @@ class NullIO:
         return len(data)
 
     def read(self, length=None):
-        if length is not None:
-            return bytes(length)
-        else:
-            return b""
+        return bytes(length) if length is not None else b""
 
     def close(self):
         pass
@@ -394,23 +370,23 @@ class Buffer:
     def __init__(self, size: int = 16):
         self._buf = bytearray(size)
         self._buflen = 0
-        self.view = memoryview(self._buf[0:0])
+        self.view = memoryview(self._buf[:0])
 
     def add(self, data: Union[bytes, bytearray, memoryview]):
         length = len(data)
         self._buf[self._buflen :] = data
         self._buflen += length
-        self.view = memoryview(self._buf[0 : self._buflen])
+        self.view = memoryview(self._buf[:self._buflen])
 
     def reset(self) -> None:
         self._buflen = 0
-        self.view = memoryview(self._buf[0:0])
+        self.view = memoryview(self._buf[:0])
 
     def set(self, data: Union[bytes, bytearray, memoryview]) -> None:
         length = len(data)
-        self._buf[0:] = data
+        self._buf[:] = data
         self._buflen = length
-        self.view = memoryview(self._buf[0:length])
+        self.view = memoryview(self._buf[:length])
 
     def get(self) -> bytearray:
         val = self._buf[: self._buflen]
@@ -421,34 +397,31 @@ class Buffer:
         return self._buflen
 
     def __bytes__(self):
-        return bytes(self._buf[0 : self._buflen])
+        return bytes(self._buf[:self._buflen])
 
 
 def remove_relative_path_marker(path: str) -> str:
     """
     Removes './' from the beginning of a path-like string
     """
-    processed_path = path
-
-    if path.startswith(RELATIVE_PATH_MARKER):
-        processed_path = path[len(RELATIVE_PATH_MARKER) :]
-
-    return processed_path
+    return (
+        path[len(RELATIVE_PATH_MARKER) :]
+        if path.startswith(RELATIVE_PATH_MARKER)
+        else path
+    )
 
 
 def canonical_path(target: pathlib.PurePath) -> pathlib.PurePath:
     """Return a canonical path of target argument."""
     stack: List[str] = []
     for p in target.parts:
-        if p != ".." or len(stack) == 0:
+        if p != ".." or not stack:
             stack.append(p)
             continue
         # treat '..'
         if stack[-1] == "..":
             stack.append(p)  # '../' + '../' -> '../../'
-        elif stack[-1] == "/":
-            pass  # '/' + '../' -> '/'
-        else:
+        elif stack[-1] != "/":
             stack.pop()  # 'foo/boo/' + '..' -> 'foo/'
     return pathlib.PurePath(*stack)
 

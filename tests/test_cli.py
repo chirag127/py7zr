@@ -25,10 +25,10 @@ def test_cli_list_1(capsys):
    Date      Time    Attr         Size   Compressed  Name
 ------------------- ----- ------------ ------------  ------------------------
 """
-    expected += "{} D....            0            0  scripts\n".format(ltime2(2019, 3, 14, 0, 10, 8))
-    expected += "{} ....A          111          441  scripts/py7zr\n".format(ltime2(2019, 3, 14, 0, 10, 8))
-    expected += "{} ....A           58               setup.cfg\n".format(ltime2(2019, 3, 14, 0, 7, 13))
-    expected += "{} ....A          559               setup.py\n".format(ltime2(2019, 3, 14, 0, 9, 1))
+    expected += f"{ltime2(2019, 3, 14, 0, 10, 8)} D....            0            0  scripts\n"
+    expected += f"{ltime2(2019, 3, 14, 0, 10, 8)} ....A          111          441  scripts/py7zr\n"
+    expected += f"{ltime2(2019, 3, 14, 0, 7, 13)} ....A           58               setup.cfg\n"
+    expected += f"{ltime2(2019, 3, 14, 0, 9, 1)} ....A          559               setup.py\n"
     expected += "------------------- ----- ------------ ------------  ------------------------\n"
     cli = py7zr.cli.Cli()
     cli.run(["l", arc])
@@ -39,91 +39,39 @@ def test_cli_list_1(capsys):
 @pytest.mark.cli
 def test_cli_list_2(capsys):
     arc = os.path.join(testdata_path, "test_3.7z")
-    expected = "total 28 files and directories in solid archive\n"
-    expected += "   Date      Time    Attr         Size   Compressed  Name\n"
+    expected = (
+        "total 28 files and directories in solid archive\n"
+        + "   Date      Time    Attr         Size   Compressed  Name\n"
+    )
     expected += "------------------- ----- ------------ ------------  ------------------------\n"
-    expected += "{} D....            0            0  5.9.7\n".format(ltime2(2018, 10, 18, 14, 52, 42))  # noqa: E501
-    expected += "{} D....            0            0  5.9.7/gcc_64\n".format(ltime2(2018, 10, 18, 14, 52, 43))  # noqa: E501
-    expected += "{} D....            0            0  5.9.7/gcc_64/include\n".format(
-        ltime2(2018, 10, 18, 14, 52, 42)
-    )  # noqa: E501
-    expected += "{} D....            0            0  5.9.7/gcc_64/include/QtX11Extras\n".format(
-        ltime2(2018, 10, 18, 14, 52, 42)
-    )  # noqa: E501
-    expected += "{} D....            0            0  5.9.7/gcc_64/lib\n".format(
-        ltime2(2018, 10, 18, 14, 52, 42)
-    )  # noqa: E501
-    expected += "{} D....            0            0  5.9.7/gcc_64/lib/cmake\n".format(
-        ltime2(2018, 10, 18, 14, 52, 42)
-    )  # noqa: E501
-    expected += "{} D....            0            0  5.9.7/gcc_64/lib/cmake/Qt5X11Extras\n".format(
-        ltime2(2018, 10, 18, 14, 52, 42)
-    )  # noqa: E501
-    expected += "{} D....            0            0  5.9.7/gcc_64/lib/pkgconfig\n".format(
-        ltime2(2018, 10, 18, 14, 52, 42)
-    )  # noqa: E501
-    expected += "{} D....            0            0  5.9.7/gcc_64/mkspecs\n".format(
-        ltime2(2018, 10, 18, 14, 52, 42)
-    )  # noqa: E501
-    expected += "{} D....            0            0  5.9.7/gcc_64/mkspecs/modules\n".format(
-        ltime2(2018, 10, 18, 14, 52, 42)
-    )  # noqa: E501
-    expected += "{} ....A           26         8472  5.9.7/gcc_64/include/QtX11Extras/QX11Info\n".format(
-        ltime2(2018, 10, 16, 10, 26, 21)
-    )  # noqa: E501
-    expected += "{} ....A          176               5.9.7/gcc_64/include/QtX11Extras/QtX11Extras\n".format(
-        ltime2(2018, 10, 16, 10, 26, 24)
-    )  # noqa: E501
-    expected += "{} ....A          201               5.9.7/gcc_64/include/QtX11Extras/QtX11ExtrasDepends\n".format(
-        ltime2(2018, 10, 16, 10, 26, 24)
-    )  # noqa: E501
-    expected += "{} ....A           32               5.9.7/gcc_64/include/QtX11Extras/QtX11ExtrasVersion\n".format(
-        ltime2(2018, 10, 16, 10, 26, 24)
-    )  # noqa: E501
-    expected += "{} ....A          722               5.9.7/gcc_64/lib/libQt5X11Extras.la\n".format(
-        ltime2(2018, 10, 16, 10, 26, 27)
-    )  # noqa: E501
-    expected += "{} ....A         2280               5.9.7/gcc_64/include/QtX11Extras/qtx11extrasglobal.h\n".format(
-        ltime2(2018, 10, 16, 10, 26, 21)
-    )  # noqa: E501
-    expected += "{} ....A          222               5.9.7/gcc_64/include/QtX11Extras/qtx11extrasversion.h\n".format(
-        ltime2(2018, 10, 16, 10, 26, 24)
-    )  # noqa: E501
-    expected += "{} ....A         2890               5.9.7/gcc_64/include/QtX11Extras/qx11info_x11.h\n".format(
-        ltime2(2018, 10, 16, 10, 26, 21)
-    )  # noqa: E501
-    expected += "{} ....A           24               5.9.7/gcc_64/lib/libQt5X11Extras.so\n".format(
-        ltime2(2018, 10, 18, 14, 52, 42)
-    )  # noqa: E501
-    expected += "{} ....A           24               5.9.7/gcc_64/lib/libQt5X11Extras.so.5\n".format(
-        ltime2(2018, 10, 18, 14, 52, 42)
-    )  # noqa: E501
-    expected += "{} ....A        14568               5.9.7/gcc_64/lib/libQt5X11Extras.so.5.9.7\n".format(
-        ltime2(2018, 10, 16, 10, 26, 27)
-    )  # noqa: E501
-    expected += "{} ....A           24               5.9.7/gcc_64/lib/libQt5X11Extras.so.5.9\n".format(
-        ltime2(2018, 10, 18, 14, 52, 42)
-    )  # noqa: E501
-    expected += "{} ....A         6704               5.9.7/gcc_64/lib/cmake/Qt5X11Extras/Qt5X11ExtrasConfig.cmake\n".format(
-        ltime2(2018, 10, 16, 10, 26, 24)
-    )  # noqa: E501
-    expected += (
-        "{} ....A          287               5.9.7/gcc_64/lib/cmake/Qt5X11Extras/Qt5X11ExtrasConfigVersion.cmake\n".format(
-            ltime2(2018, 10, 16, 10, 26, 24)
-        )
-    )  # noqa: E501
-    expected += "{} ....A          283               5.9.7/gcc_64/lib/pkgconfig/Qt5X11Extras.pc\n".format(
-        ltime2(2018, 10, 16, 10, 26, 27)
-    )  # noqa: E501
-    expected += "{} ....A          555               5.9.7/gcc_64/mkspecs/modules/qt_lib_x11extras.pri\n".format(
-        ltime2(2018, 10, 16, 10, 26, 24)
-    )  # noqa: E501
-    expected += "{} ....A          526               5.9.7/gcc_64/mkspecs/modules/qt_lib_x11extras_private.pri\n".format(
-        ltime2(2018, 10, 16, 10, 26, 24)
-    )  # noqa: E501
-    expected += "{} ....A         1064               5.9.7/gcc_64/lib/libQt5X11Extras.prl\n".format(
-        ltime2(2018, 10, 18, 10, 28, 16)
-    )  # noqa: E501
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} D....            0            0  5.9.7\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 43)} D....            0            0  5.9.7/gcc_64\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} D....            0            0  5.9.7/gcc_64/include\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} D....            0            0  5.9.7/gcc_64/include/QtX11Extras\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} D....            0            0  5.9.7/gcc_64/lib\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} D....            0            0  5.9.7/gcc_64/lib/cmake\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} D....            0            0  5.9.7/gcc_64/lib/cmake/Qt5X11Extras\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} D....            0            0  5.9.7/gcc_64/lib/pkgconfig\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} D....            0            0  5.9.7/gcc_64/mkspecs\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} D....            0            0  5.9.7/gcc_64/mkspecs/modules\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 21)} ....A           26         8472  5.9.7/gcc_64/include/QtX11Extras/QX11Info\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 24)} ....A          176               5.9.7/gcc_64/include/QtX11Extras/QtX11Extras\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 24)} ....A          201               5.9.7/gcc_64/include/QtX11Extras/QtX11ExtrasDepends\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 24)} ....A           32               5.9.7/gcc_64/include/QtX11Extras/QtX11ExtrasVersion\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 27)} ....A          722               5.9.7/gcc_64/lib/libQt5X11Extras.la\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 21)} ....A         2280               5.9.7/gcc_64/include/QtX11Extras/qtx11extrasglobal.h\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 24)} ....A          222               5.9.7/gcc_64/include/QtX11Extras/qtx11extrasversion.h\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 21)} ....A         2890               5.9.7/gcc_64/include/QtX11Extras/qx11info_x11.h\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} ....A           24               5.9.7/gcc_64/lib/libQt5X11Extras.so\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} ....A           24               5.9.7/gcc_64/lib/libQt5X11Extras.so.5\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 27)} ....A        14568               5.9.7/gcc_64/lib/libQt5X11Extras.so.5.9.7\n"
+    expected += f"{ltime2(2018, 10, 18, 14, 52, 42)} ....A           24               5.9.7/gcc_64/lib/libQt5X11Extras.so.5.9\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 24)} ....A         6704               5.9.7/gcc_64/lib/cmake/Qt5X11Extras/Qt5X11ExtrasConfig.cmake\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 24)} ....A          287               5.9.7/gcc_64/lib/cmake/Qt5X11Extras/Qt5X11ExtrasConfigVersion.cmake\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 27)} ....A          283               5.9.7/gcc_64/lib/pkgconfig/Qt5X11Extras.pc\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 24)} ....A          555               5.9.7/gcc_64/mkspecs/modules/qt_lib_x11extras.pri\n"
+    expected += f"{ltime2(2018, 10, 16, 10, 26, 24)} ....A          526               5.9.7/gcc_64/mkspecs/modules/qt_lib_x11extras_private.pri\n"
+    expected += f"{ltime2(2018, 10, 18, 10, 28, 16)} ....A         1064               5.9.7/gcc_64/lib/libQt5X11Extras.prl\n"
     expected += "------------------- ----- ------------ ------------  ------------------------\n"
     cli = py7zr.cli.Cli()
     cli.run(["l", arc])
@@ -176,10 +124,10 @@ total 4 files and directories in solid archive
 """.format(
         arcfile, arcfile
     )
-    expected += "{} D....            0            0  scripts\n".format(ltime2(2019, 3, 14, 0, 10, 8))
-    expected += "{} ....A          111          441  scripts/py7zr\n".format(ltime2(2019, 3, 14, 0, 10, 8))
-    expected += "{} ....A           58               setup.cfg\n".format(ltime2(2019, 3, 14, 0, 7, 13))
-    expected += "{} ....A          559               setup.py\n".format(ltime2(2019, 3, 14, 0, 9, 1))
+    expected += f"{ltime2(2019, 3, 14, 0, 10, 8)} D....            0            0  scripts\n"
+    expected += f"{ltime2(2019, 3, 14, 0, 10, 8)} ....A          111          441  scripts/py7zr\n"
+    expected += f"{ltime2(2019, 3, 14, 0, 7, 13)} ....A           58               setup.cfg\n"
+    expected += f"{ltime2(2019, 3, 14, 0, 9, 1)} ....A          559               setup.py\n"
     expected += "------------------- ----- ------------ ------------  ------------------------\n"
     cli = py7zr.cli.Cli()
     cli.run(["l", "--verbose", arcfile])
@@ -221,7 +169,7 @@ def test_cli_info(capsys):
         check1 = "\n0             SHA256"
     else:
         check1 = ""
-    expected_checks = """0              CRC32{}{}""".format(check1, check0)
+    expected_checks = f"""0              CRC32{check1}{check0}"""
     expected += """\n
 Formats:
 7z    37 7a bc af 27 1c
@@ -482,31 +430,25 @@ total 19 files and directories in solid archive
 """.format(
         basefile, basefile
     )
-    expected += "{} D....            0            0  mingw64\n".format(ltime2(2017, 1, 23, 6, 2, 46))
-    expected += "{} D....            0            0  mingw64/bin\n".format(ltime2(2020, 6, 7, 2, 45, 18))
-    expected += "{} D....            0            0  mingw64/include\n".format(ltime2(2020, 6, 7, 2, 45, 18))
-    expected += "{} D....            0            0  mingw64/lib\n".format(ltime2(2020, 6, 7, 2, 45, 18))
-    expected += "{} D....            0            0  mingw64/share\n".format(ltime2(2020, 6, 7, 2, 45, 26))
-    expected += "{} D....            0            0  mingw64/share/doc\n".format(ltime2(2017, 1, 23, 6, 2, 43))
-    expected += "{} D....            0            0  mingw64/share/doc/szip\n".format(ltime2(2017, 1, 23, 6, 2, 43))
-    expected += "{} ....A         2289        26895  mingw64/include/SZconfig.h\n".format(ltime2(2017, 1, 23, 6, 2, 34))
-    expected += "{} ....A         3470               mingw64/include/ricehdf.h\n".format(ltime2(2004, 3, 16, 16, 14, 27))
-    expected += "{} ....A         1774               mingw64/include/szip_adpt.h\n".format(ltime2(2010, 7, 2, 21, 31, 38))
-    expected += "{} ....A         5282               mingw64/include/szlib.h\n".format(ltime2(2008, 11, 11, 16, 12, 56))
-    expected += "{} ....A        60008               mingw64/lib/libszip.a\n".format(ltime2(2017, 1, 23, 6, 2, 47))
-    expected += "{} ....A        10900               mingw64/lib/libszip.dll.a\n".format(ltime2(2017, 1, 23, 6, 2, 39))
-    expected += "{} ....A         1986               mingw64/share/doc/szip/COPYING\n".format(ltime2(2008, 1, 24, 23, 8, 43))
-    expected += "{} ....A         1544               mingw64/share/doc/szip/HISTORY.txt\n".format(
-        ltime2(2010, 7, 14, 13, 43, 15)
-    )
-    expected += "{} ....A         3544               mingw64/share/doc/szip/INSTALL\n".format(
-        ltime2(2008, 11, 11, 16, 12, 56)
-    )
-    expected += "{} ....A          564               mingw64/share/doc/szip/README\n".format(ltime2(2007, 8, 20, 18, 47, 21))
-    expected += "{} ....A          513               mingw64/share/doc/szip/RELEASE.txt\n".format(
-        ltime2(2010, 7, 14, 13, 43, 15)
-    )
-    expected += "{} ....A        66352        24924  mingw64/bin/libszip-0.dll\n".format(ltime2(2017, 1, 23, 6, 2, 47))
+    expected += f"{ltime2(2017, 1, 23, 6, 2, 46)} D....            0            0  mingw64\n"
+    expected += f"{ltime2(2020, 6, 7, 2, 45, 18)} D....            0            0  mingw64/bin\n"
+    expected += f"{ltime2(2020, 6, 7, 2, 45, 18)} D....            0            0  mingw64/include\n"
+    expected += f"{ltime2(2020, 6, 7, 2, 45, 18)} D....            0            0  mingw64/lib\n"
+    expected += f"{ltime2(2020, 6, 7, 2, 45, 26)} D....            0            0  mingw64/share\n"
+    expected += f"{ltime2(2017, 1, 23, 6, 2, 43)} D....            0            0  mingw64/share/doc\n"
+    expected += f"{ltime2(2017, 1, 23, 6, 2, 43)} D....            0            0  mingw64/share/doc/szip\n"
+    expected += f"{ltime2(2017, 1, 23, 6, 2, 34)} ....A         2289        26895  mingw64/include/SZconfig.h\n"
+    expected += f"{ltime2(2004, 3, 16, 16, 14, 27)} ....A         3470               mingw64/include/ricehdf.h\n"
+    expected += f"{ltime2(2010, 7, 2, 21, 31, 38)} ....A         1774               mingw64/include/szip_adpt.h\n"
+    expected += f"{ltime2(2008, 11, 11, 16, 12, 56)} ....A         5282               mingw64/include/szlib.h\n"
+    expected += f"{ltime2(2017, 1, 23, 6, 2, 47)} ....A        60008               mingw64/lib/libszip.a\n"
+    expected += f"{ltime2(2017, 1, 23, 6, 2, 39)} ....A        10900               mingw64/lib/libszip.dll.a\n"
+    expected += f"{ltime2(2008, 1, 24, 23, 8, 43)} ....A         1986               mingw64/share/doc/szip/COPYING\n"
+    expected += f"{ltime2(2010, 7, 14, 13, 43, 15)} ....A         1544               mingw64/share/doc/szip/HISTORY.txt\n"
+    expected += f"{ltime2(2008, 11, 11, 16, 12, 56)} ....A         3544               mingw64/share/doc/szip/INSTALL\n"
+    expected += f"{ltime2(2007, 8, 20, 18, 47, 21)} ....A          564               mingw64/share/doc/szip/README\n"
+    expected += f"{ltime2(2010, 7, 14, 13, 43, 15)} ....A          513               mingw64/share/doc/szip/RELEASE.txt\n"
+    expected += f"{ltime2(2017, 1, 23, 6, 2, 47)} ....A        66352        24924  mingw64/bin/libszip-0.dll\n"
     expected += "------------------- ----- ------------ ------------  ------------------------\n"
     cli = py7zr.cli.Cli()
     cli.run(["l", "--verbose", arcfile])
