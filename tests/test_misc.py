@@ -127,6 +127,9 @@ def test_callback_not_concrete_class():
 @pytest.mark.api
 def test_extract_callback(tmp_path):
     # test the case when good callback passed.
+
+
+
     class ECB(py7zr.callbacks.ExtractCallback):
         def __init__(self, ofd):
             self.ofd = ofd
@@ -135,16 +138,21 @@ def test_extract_callback(tmp_path):
             self.ofd.write("preparation.\n")
 
         def report_start(self, processing_file_path, processing_bytes):
-            self.ofd.write('start "{}" (compressed in {} bytes)\n'.format(processing_file_path, processing_bytes))
+            self.ofd.write(
+                f'start "{processing_file_path}" (compressed in {processing_bytes} bytes)\n'
+            )
 
         def report_end(self, processing_file_path, wrote_bytes):
-            self.ofd.write('end "{}" extracted to {} bytes\n'.format(processing_file_path, wrote_bytes))
+            self.ofd.write(
+                f'end "{processing_file_path}" extracted to {wrote_bytes} bytes\n'
+            )
 
         def report_postprocess(self):
             self.ofd.write("post processing.\n")
 
         def report_warning(self, message):
             self.ofd.write("warning: {:s}\n".format(message))
+
 
     cb = ECB(sys.stdout)
     with py7zr.SevenZipFile(open(os.path.join(testdata_path, "test_1.7z"), "rb")) as archive:
@@ -220,10 +228,7 @@ class Generator(io.BufferedIOBase):
         self.seeked = True
 
     def tell(self) -> int:
-        if self.seeked:
-            return self.length
-        else:
-            return 0
+        return self.length if self.seeked else 0
 
     def generate_raw_bytes(self, size):
         return bytes(size)

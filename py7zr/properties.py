@@ -92,17 +92,15 @@ def get_memory_limit():
     default_limit = int(128e6)
     if sys.platform.startswith("win") or sys.platform.startswith("cygwin"):
         return default_limit
-    else:
-        import resource
+    import resource
 
-        import psutil  # type: ignore
+    import psutil  # type: ignore
 
-        soft, _ = resource.getrlimit(resource.RLIMIT_AS)
-        if soft == -1:
-            avmem = psutil.virtual_memory().available
-            return min(default_limit, (avmem - int(256e6)) >> 2)
-        else:
-            return min(default_limit, (soft - int(256e6)) >> 2)
+    soft, _ = resource.getrlimit(resource.RLIMIT_AS)
+    if soft != -1:
+        return min(default_limit, (soft - int(256e6)) >> 2)
+    avmem = psutil.virtual_memory().available
+    return min(default_limit, (avmem - int(256e6)) >> 2)
 
 
 # Exposed constants

@@ -129,8 +129,7 @@ class AESCompressor(ISevenZipCompressor):
         saltfirst = 1 if len(self.salt) > 0 else 0
         firstbyte = (self.cycles + (ivfirst << 6) + (saltfirst << 7)).to_bytes(1, "little")
         secondbyte = (((ivsize - 1) & 0x0F) + (((saltsize - saltfirst) << 4) & 0xF0)).to_bytes(1, "little")
-        properties = firstbyte + secondbyte + self.salt + self.iv
-        return properties
+        return firstbyte + secondbyte + self.salt + self.iv
 
     def compress(self, data):
         """Compression + AES encryption with 16byte alignment."""
@@ -180,28 +179,28 @@ class AESDecompressor(ISevenZipDecompressor):
     def __init__(self, aes_properties: bytes, password: str, blocksize: Optional[int] = None) -> None:
         firstbyte = aes_properties[0]
         numcyclespower = firstbyte & 0x3F
-        if firstbyte & 0xC0 != 0:
-            saltsize = (firstbyte >> 7) & 1
-            ivsize = (firstbyte >> 6) & 1
-            secondbyte = aes_properties[1]
-            saltsize += secondbyte >> 4
-            ivsize += secondbyte & 0x0F
-            assert len(aes_properties) == 2 + saltsize + ivsize
-            salt = aes_properties[2 : 2 + saltsize]
-            iv = aes_properties[2 + saltsize : 2 + saltsize + ivsize]
-            assert len(salt) == saltsize
-            assert len(iv) == ivsize
-            assert numcyclespower <= 24
-            if ivsize < 16:
-                iv += bytes("\x00" * (16 - ivsize), "ascii")
-            key = calculate_key(password.encode("utf-16LE"), numcyclespower, salt, "sha256")
-            self.cipher = AES.new(key, AES.MODE_CBC, iv)
-            if blocksize:
-                self.buf = Buffer(size=blocksize + 16)
-            else:
-                self.buf = Buffer(size=get_default_blocksize() + 16)
-        else:
+        if firstbyte & 0xC0 == 0:
             raise UnsupportedCompressionMethodError(firstbyte, "Wrong 7zAES properties")
+        saltsize = (firstbyte >> 7) & 1
+        ivsize = (firstbyte >> 6) & 1
+        secondbyte = aes_properties[1]
+        saltsize += secondbyte >> 4
+        ivsize += secondbyte & 0x0F
+        assert len(aes_properties) == 2 + saltsize + ivsize
+        salt = aes_properties[2 : 2 + saltsize]
+        iv = aes_properties[2 + saltsize : 2 + saltsize + ivsize]
+        assert len(salt) == saltsize
+        assert len(iv) == ivsize
+        assert numcyclespower <= 24
+        if ivsize < 16:
+            iv += bytes("\x00" * (16 - ivsize), "ascii")
+        key = calculate_key(password.encode("utf-16LE"), numcyclespower, salt, "sha256")
+        self.cipher = AES.new(key, AES.MODE_CBC, iv)
+        self.buf = (
+            Buffer(size=blocksize + 16)
+            if blocksize
+            else Buffer(size=get_default_blocksize() + 16)
+        )
 
     def decompress(self, data: Union[bytes, bytearray, memoryview], max_length: int = -1) -> bytes:
         currentlen = len(self.buf) + len(data)
@@ -255,9 +254,8 @@ class DeflateDecompressor(ISevenZipDecompressor):
         if len(data) == 0:
             if self.flushed:
                 return b""
-            else:
-                self.flushed = True
-                return self._decompressor.flush()
+            self.flushed = True
+            return self._decompressor.flush()
         return self._decompressor.decompress(data)
 
 
@@ -299,9 +297,8 @@ class Deflate64Decompressor(ISevenZipDecompressor):
         if len(data) == 0:
             if self.flushed:
                 return b""
-            else:
-                self.flushed = True
-                return self._decompressor.inflate(b"")
+            self.flushed = True
+            return self._decompressor.inflate(b"")
         return self._decompressor.inflate(data)
 
 
@@ -374,8 +371,7 @@ class PpmdCompressor(ISevenZipCompressor):
             size = 1 << mem
         else:
             raise ValueError("Ppmd:Unsupported memory size is specified: {0}".format(mem))
-        properties = struct.pack("<BLBB", order, size, 0, 0)
-        return properties
+        return struct.pack("<BLBB", order, size, 0, 0)
 
 
 class BcjSparcDecoder(ISevenZipDecompressor):
@@ -491,9 +487,7 @@ class BrotliDecompressor(ISevenZipDecompressor):
         if (properties[0], properties[1]) > (brotli_major, brotli_minor):
             raise UnsupportedCompressionMethodError(
                 properties,
-                "Unsupported brotli version: {}.{} our {}.{}".format(
-                    properties[0], properties[1], brotli_major, brotli_minor
-                ),
+                f"Unsupported brotli version: {properties[0]}.{properties[1]} our {brotli_major}.{brotli_minor}",
             )
         self._prefix_checked = False
         self._decompressor = brotli.Decompressor()
@@ -576,13 +570,10 @@ class SevenZipDecompressor:
         self.consumed: int = 0
         self.crc = crc
         self.digest: int = 0
-        if blocksize:
-            self.block_size: int = blocksize
-        else:
-            self.block_size = get_default_blocksize()
+        self.block_size = blocksize or get_default_blocksize()
         if len(coders) > 4:
             raise UnsupportedCompressionMethodError(
-                coders, "Maximum cascade of filters is 4 but got {}.".format(len(coders))
+                coders, f"Maximum cascade of filters is 4 but got {len(coders)}."
             )
         self.methods_map = [SupportedMethods.is_native_coder(coder) for coder in coders]  # type: List[bool]
         # Check if password given for encrypted archive
@@ -629,8 +620,12 @@ class SevenZipDecompressor:
             decompressor = self._get_lzma_decompressor(coders, unpacksizes[-1])
             self.chain.append(decompressor)
         elif not any(self.methods_map):
-            for i in range(len(coders)):
-                self.chain.append(self._get_alternative_decompressor(coders[i], unpacksizes[i], password))
+            self.chain.extend(
+                self._get_alternative_decompressor(
+                    coders[i], unpacksizes[i], password
+                )
+                for i in range(len(coders))
+            )
         elif any(self.methods_map):
             for i in range(len(coders)):
                 if (not any(self.methods_map[:i])) and all(self.methods_map[i:]):
@@ -698,11 +693,10 @@ class SevenZipDecompressor:
                 if current_buf_len + len(tmp) <= max_length:
                     res = self._buf[self._pos :] + tmp
                     self._buf = bytearray()
-                    self._pos = 0
                 else:
                     res = self._buf[self._pos :] + tmp[: max_length - current_buf_len]
                     self._buf = bytearray(tmp[max_length - current_buf_len :])
-                    self._pos = 0
+                self._pos = 0
         self.digest = calculate_crc32(res, self.digest)
         return res
 
@@ -749,12 +743,17 @@ class SevenZipDecompressor:
             return algorithm_class_map[filter_id][1](size=unpacksize)
         # Check supported?
         if SupportedMethods.is_native_coder(coder):
-            raise UnsupportedCompressionMethodError(coder, "Unknown method code:{}".format(coder["method"]))
+            raise UnsupportedCompressionMethodError(
+                coder, f'Unknown method code:{coder["method"]}'
+            )
         if filter_id not in algorithm_class_map:
-            raise UnsupportedCompressionMethodError(coder, "Unknown method filter_id:{}".format(filter_id))
+            raise UnsupportedCompressionMethodError(
+                coder, f"Unknown method filter_id:{filter_id}"
+            )
         if algorithm_class_map[filter_id][1] is None:
             raise UnsupportedCompressionMethodError(
-                coder, "Decompression is not supported by {}.".format(SupportedMethods.get_method_name_id(filter_id))
+                coder,
+                f"Decompression is not supported by {SupportedMethods.get_method_name_id(filter_id)}.",
             )
         #
         if SupportedMethods.is_crypto_id(filter_id):
@@ -786,39 +785,32 @@ class SevenZipCompressor:
         self.digest = 0
         self.packsize = 0
         self._unpacksizes: List[int] = []
-        if blocksize:
-            self._block_size = blocksize
-        else:
-            self._block_size = get_default_blocksize()
+        self._block_size = blocksize or get_default_blocksize()
         if filters is None:
             self.filters = [{"id": lzma.FILTER_LZMA2, "preset": 7 | lzma.PRESET_EXTREME}]
         else:
             self.filters = filters
         if len(self.filters) > 4:
             raise UnsupportedCompressionMethodError(
-                filters, "Maximum cascade of filters is 4 but got {}.".format(len(self.filters))
+                filters,
+                f"Maximum cascade of filters is 4 but got {len(self.filters)}.",
             )
         self.methods_map = [SupportedMethods.is_native_filter(filter) for filter in self.filters]
         self.coders: List[Dict[str, Any]] = []
         if all(self.methods_map) and SupportedMethods.is_compressor(self.filters[-1]):  # all native
             self._set_native_compressors_coders(self.filters)
             return
-        #
-        has_lzma2 = False
-        for f in self.filters:
-            if f["id"] == FILTER_LZMA2:
-                has_lzma2 = True
-                break
+        has_lzma2 = any(f["id"] == FILTER_LZMA2 for f in self.filters)
         if not has_lzma2:
             # when specified other than lzma2, BCJ filters should be alternative
             for i, f in enumerate(self.filters):
-                if (
-                    f["id"] == FILTER_X86
-                    or f["id"] == FILTER_ARM
-                    or f["id"] == FILTER_ARMTHUMB
-                    or f["id"] == FILTER_SPARC
-                    or f["id"] == FILTER_POWERPC
-                ):
+                if f["id"] in [
+                    FILTER_X86,
+                    FILTER_ARM,
+                    FILTER_ARMTHUMB,
+                    FILTER_SPARC,
+                    FILTER_POWERPC,
+                ]:
                     self.methods_map[i] = False
         #
         if not any(self.methods_map):  # all alternative
@@ -1075,9 +1067,7 @@ class SupportedMethods:
     @classmethod
     def get_filter_id(cls, coder):
         method = cls._find_method("id", coder["method"])
-        if method is None:
-            return None
-        return method["filter_id"]
+        return None if method is None else method["filter_id"]
 
     @classmethod
     def is_native_filter(cls, filter) -> bool:
@@ -1203,9 +1193,11 @@ def get_methods_names(coders_lists: List[List[dict]]) -> List[str]:
     methods_names = []
     for coders in coders_lists:
         for coder in coders:
-            for m in SupportedMethods.methods:
-                if coder["method"] == m["id"]:
-                    methods_names.append(m["name"])
+            methods_names.extend(
+                m["name"]
+                for m in SupportedMethods.methods
+                if coder["method"] == m["id"]
+            )
             if coder["method"] in unsupported_methods:
                 methods_names.append(unsupported_methods[coder["method"]])
     return list(filter(lambda x: x in methods_names, methods_namelist))

@@ -49,7 +49,7 @@ def test_compress_single_encoded_header(capsys, tmp_path):
         "   Date      Time    Attr         Size   Compressed  Name\n"
         "------------------- ----- ------------ ------------  ------------------------\n"
     )
-    expected += "{} ....A           33           37  test1.txt\n".format(ltime(mtime))
+    expected += f"{ltime(mtime)} ....A           33           37  test1.txt\n"
     expected += "------------------- ----- ------------ ------------  ------------------------\n"
     cli = py7zr.cli.Cli()
     cli.run(["l", str(target)])
@@ -177,7 +177,7 @@ def test_compress_file_0(capsys, tmp_path):
         "   Date      Time    Attr         Size   Compressed  Name\n"
         "------------------- ----- ------------ ------------  ------------------------\n"
     )
-    expected += "{} ....A           33           37  test1.txt\n".format(ltime(mtime))
+    expected += f"{ltime(mtime)} ....A           33           37  test1.txt\n"
     expected += "------------------- ----- ------------ ------------  ------------------------\n"
     cli = py7zr.cli.Cli()
     cli.run(["l", str(target)])
@@ -519,7 +519,7 @@ def test_compress_directories(tmp_path):
     archive.set_encoded_header_mode(False)
     archive.writeall(".")
     archive._write_flush()
-    for i, f in enumerate(archive.header.files_info.files):
+    for f in archive.header.files_info.files:
         f["emptystream"] = True
     archive._fpclose()
     reader = py7zr.SevenZipFile(target, "r")

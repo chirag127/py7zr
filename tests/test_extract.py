@@ -24,15 +24,14 @@ os.umask(0o022)
 
 def check_archive(archive, tmp_path, return_dict: bool):
     assert sorted(archive.getnames()) == ["test", "test/test2.txt", "test1.txt"]
-    expected = []
-    expected.append({"filename": "test"})
-    expected.append(
+    expected = [
+        {"filename": "test"},
         {
             "lastwritetime": 12786932616,
             "as_datetime": datetime(2006, 3, 15, 21, 43, 36, 0, UTC()),
             "filename": "test/test2.txt",
-        }
-    )
+        },
+    ]
     expected.append(
         {
             "lastwritetime": 12786932628,
@@ -310,9 +309,9 @@ def test_register_unpack_archive(tmp_path):
     shutil.register_unpack_format("7zip", [".7z"], unpack_7zarchive)
     shutil.unpack_archive(str(testdata_path.joinpath("test_1.7z")), str(tmp_path))
     target = tmp_path.joinpath("setup.cfg")
-    expected_mode = 33188
     expected_mtime = 1552522033
     if os.name == "posix":
+        expected_mode = 33188
         assert target.stat().st_mode == expected_mode
     assert target.stat().st_mtime == expected_mtime
     m = hashlib.sha256()
@@ -329,7 +328,7 @@ def test_register_unpack_archive(tmp_path):
 @pytest.mark.files
 def test_skip():
     archive = py7zr.SevenZipFile(testdata_path.joinpath("test_1.7z").open(mode="rb"))
-    for i, cf in enumerate(archive.files):
+    for cf in archive.files:
         assert cf is not None
         archive.worker.register_filelike(cf.id, None)
     archive.worker.extract(archive.fp, None, parallel=True)

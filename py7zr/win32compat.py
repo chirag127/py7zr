@@ -26,7 +26,7 @@ if sys.platform == "win32":
     MAXIMUM_REPARSE_DATA_BUFFER_SIZE = 16 * 1024
 
     def _check_bit(val: int, flag: int) -> bool:
-        return bool(val & flag == flag)
+        return val & flag == flag
 
     class SymbolicLinkReparseBuffer(ctypes.Structure):
         """Implementing the below in Python:
@@ -161,7 +161,7 @@ if sys.platform == "win32":
         CloseHandle(handle)
         if not status:
             logger = getLogger(__file__)
-            logger.error("Failed IOCTL access to REPARSE_POINT {})".format(target))
+            logger.error(f"Failed IOCTL access to REPARSE_POINT {target})")
             raise ValueError("not a symbolic link or access permission violation")
 
         if buf.reparse_tag == IO_REPARSE_TAG_SYMLINK:
@@ -194,10 +194,7 @@ if sys.platform == "win32":
         # so substitute prefix here.
         if rpath.startswith("\\??\\"):
             rpath = "\\\\" + rpath[2:]
-        if target_is_path:
-            return pathlib.WindowsPath(rpath)
-        else:
-            return rpath
+        return pathlib.WindowsPath(rpath) if target_is_path else rpath
 
 
 def is_windows_native_python() -> bool:

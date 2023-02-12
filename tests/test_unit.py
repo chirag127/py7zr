@@ -444,7 +444,7 @@ def test_utcoffset():
 def test_dst():
     dt = datetime.datetime(2019, 6, 1, 12, 13, 14, 0)
     dst = py7zr.helpers.Local.dst(dt)
-    assert dst == datetime.timedelta(0) or dst == datetime.timedelta(hours=1)
+    assert dst in [datetime.timedelta(0), datetime.timedelta(hours=1)]
 
 
 @pytest.mark.unit
@@ -472,8 +472,7 @@ def test_read_crcs():
 
 @pytest.mark.unit
 def test_fileinfo_st_fmt():
-    file_info = {}
-    file_info["attributes"] = FILE_ATTRIBUTE_UNIX_EXTENSION
+    file_info = {"attributes": FILE_ATTRIBUTE_UNIX_EXTENSION}
     file = py7zr.py7zr.ArchiveFile(0, file_info)
     assert file.st_fmt == 0
     file_info["attributes"] = 0

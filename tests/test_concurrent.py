@@ -76,7 +76,7 @@ def test_concurrent_futures(tmp_path):
             szf.close()
         except Exception:
             exc = sys.exc_info()
-            logging.error("Caught error: %s" % exc[1])
+            logging.error(f"Caught error: {exc[1]}")
             return False
         return True
 

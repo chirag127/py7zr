@@ -63,7 +63,7 @@ def test_hardlink_readlink(tmp_path):
     hard = tmp_path / "target" / "link"
     hard.parent.mkdir(parents=True, exist_ok=True)
     if sys.platform.startswith("win"):
-        os.system("mklink /H %s %s" % (str(hard), str(target.resolve())))
+        os.system(f"mklink /H {str(hard)} {str(target.resolve())}")
     else:
         os.link(str(target.resolve()), str(hard))
     assert hard.open("r").read() == "Original"
@@ -82,7 +82,7 @@ def test_junction_readlink(tmp_path):
         f.write("Original")
     junction = tmp_path / "target" / "link"
     junction.parent.mkdir(parents=True, exist_ok=True)
-    os.system("mklink /J %s %s" % (str(junction), str(target.resolve())))
+    os.system(f"mklink /J {str(junction)} {str(target.resolve())}")
     assert not os.path.islink(str(junction))
     assert py7zr.win32compat.is_reparse_point(str(junction))
     assert py7zr.win32compat.readlink(str(junction)) == PATH_PREFIX + str(target.resolve())
