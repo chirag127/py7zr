@@ -292,4 +292,4 @@ def test_decompress_deflate64(tmp_path):
         m0.update(tmp_path.joinpath("tgt").joinpath(target).open("rb").read())
         m1 = hashlib.sha256()
         m1.update(tmp_path.joinpath("src").joinpath(target).open("rb").read())
-        assert m0.digest() == m1.digest(), "Fails digest for %s" % target
+        assert m0.digest() == m1.digest(), f"Fails digest for {target}"

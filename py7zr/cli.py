@@ -54,7 +54,7 @@ class CliExtractCallback(ExtractCallback):
         pass
 
     def report_start(self, processing_file_path, processing_bytes):
-        self.ofd.write("- {}".format(processing_file_path))
+        self.ofd.write(f"- {processing_file_path}")
         self.pwidth += len(processing_file_path) + 2
 
     def report_end(self, processing_file_path, wrote_bytes):
@@ -93,9 +93,7 @@ class Cli:
 
     def run(self, arg: Optional[Any] = None) -> int:
         args = self.parser.parse_args(arg)
-        if args.version:
-            return self.show_version()
-        return args.func(args)
+        return self.show_version() if args.version else args.func(args)
 
     def _create_parser(self):
         parser = argparse.ArgumentParser(
@@ -154,14 +152,7 @@ class Cli:
         py_version = platform.python_version()
         py_impl = platform.python_implementation()
         py_build = platform.python_compiler()
-        return "{} Version {} : {} (Python {} [{} {}])".format(
-            module_name,
-            py7zr.__version__,
-            py7zr.__copyright__,
-            py_version,
-            py_impl,
-            py_build,
-        )
+        return f"{module_name} Version {py7zr.__version__} : {py7zr.__copyright__} (Python {py_version} [{py_impl} {py_build}])"
 
     def show_help(self, args):
         self.show_version()
@@ -198,16 +189,15 @@ class Cli:
         """Print a table of contents to file."""
         target = args.arcfile
         verbose = args.verbose
-        if re.fullmatch(r"[.]0+1?", target.suffix):
-            mv_target = pathlib.Path(target.parent, target.stem)
-            ext_start = int(target.suffix[-1])
-            with multivolumefile.MultiVolume(
-                mv_target, mode="rb", ext_digits=len(target.suffix) - 1, ext_start=ext_start
-            ) as mvf:
-                setattr(mvf, "name", str(mv_target))
-                return self._run_list(mvf, verbose)
-        else:
+        if not re.fullmatch(r"[.]0+1?", target.suffix):
             return self._run_list(target, verbose)
+        mv_target = pathlib.Path(target.parent, target.stem)
+        ext_start = int(target.suffix[-1])
+        with multivolumefile.MultiVolume(
+            mv_target, mode="rb", ext_digits=len(target.suffix) - 1, ext_start=ext_start
+        ) as mvf:
+            setattr(mvf, "name", str(mv_target))
+            return self._run_list(mvf, verbose)
 
     def _run_list(self, target, verbose):
         if not py7zr.is_7zfile(target):
@@ -219,21 +209,21 @@ class Cli:
             archive_list = a.list()
             if verbose:
                 if isinstance(target, io.IOBase):
-                    file.write("Listing archive: {}\n".format(target.name))
+                    file.write(f"Listing archive: {target.name}\n")
                 else:
-                    file.write("Listing archive: {}\n".format(str(target)))
+                    file.write(f"Listing archive: {str(target)}\n")
                 file.write("--\n")
-                file.write("Path = {}\n".format(archive_info.filename))
+                file.write(f"Path = {archive_info.filename}\n")
                 file.write("Type = 7z\n")
                 fstat = archive_info.stat
-                file.write("Phisical Size = {}\n".format(fstat.st_size))
-                file.write("Headers Size = {}\n".format(archive_info.header_size))
-                file.write("Method = {}\n".format(", ".join(archive_info.method_names)))
+                file.write(f"Phisical Size = {fstat.st_size}\n")
+                file.write(f"Headers Size = {archive_info.header_size}\n")
+                file.write(f'Method = {", ".join(archive_info.method_names)}\n')
                 if archive_info.solid:
-                    file.write("Solid = {}\n".format("+"))
+                    file.write(f"Solid = +\n")
                 else:
-                    file.write("Solid = {}\n".format("-"))
-                file.write("Blocks = {}\n".format(archive_info.blocks))
+                    file.write(f"Solid = -\n")
+                file.write(f"Blocks = {archive_info.blocks}\n")
                 file.write("\n")
             file.write(
                 "total %d files and directories in %sarchive\n"
@@ -248,14 +238,9 @@ class Cli:
                 else:
                     lastwritedate = "         "
                     lastwritetime = "         "
-                if f.is_directory:
-                    attrib = "D..."
-                else:
-                    attrib = "...."
-                if f.archivable:
-                    attrib += "A"
-                else:
-                    attrib += "."
+                attrib = ("D..." if f.is_directory else "....") + (
+                    "A" if f.archivable else "."
+                )
                 if f.is_directory:
                     extra = "           0 "
                 elif f.compressed is None:
@@ -280,17 +265,17 @@ class Cli:
     @staticmethod
     def print_archiveinfo(archive, file):
         file.write("--\n")
-        file.write("Path = {}\n".format(archive.filename))
+        file.write(f"Path = {archive.filename}\n")
         file.write("Type = 7z\n")
         fstat = os.stat(archive.filename)
-        file.write("Phisical Size = {}\n".format(fstat.st_size))
-        file.write("Headers Size = {}\n".format(archive.header.size))
-        file.write("Method = {}\n".format(", ".join(archive._get_method_names())))
+        file.write(f"Phisical Size = {fstat.st_size}\n")
+        file.write(f"Headers Size = {archive.header.size}\n")
+        file.write(f'Method = {", ".join(archive._get_method_names())}\n')
         if archive._is_solid():
-            file.write("Solid = {}\n".format("+"))
+            file.write(f"Solid = +\n")
         else:
-            file.write("Solid = {}\n".format("-"))
-        file.write("Blocks = {}\n".format(len(archive.header.main_streams.unpackinfo.folders)))
+            file.write(f"Solid = -\n")
+        file.write(f"Blocks = {len(archive.header.main_streams.unpackinfo.folders)}\n")
 
     def run_test(self, args):
         target = args.arcfile
@@ -301,7 +286,7 @@ class Cli:
             try:
                 a = py7zr.SevenZipFile(f)
                 file = sys.stdout
-                file.write("Testing archive: {}\n".format(a.filename))
+                file.write(f"Testing archive: {a.filename}\n")
                 self.print_archiveinfo(archive=a, file=file)
                 file.write("\n")
                 if a.testzip() is None:
@@ -378,10 +363,7 @@ class Cli:
             return 0
 
     def _check_volumesize_valid(self, size: str) -> bool:
-        if self.unit_pattern.match(size):
-            return True
-        else:
-            return False
+        return bool(self.unit_pattern.match(size))
 
     def _volumesize_unitconv(self, size: str) -> int:
         m = self.unit_pattern.match(size)
@@ -420,7 +402,6 @@ class Cli:
                         szf.writeall(src)
                     else:
                         szf.write(src)
-            return 0
         else:
             size = self._volumesize_unitconv(volume_size)
             with multivolumefile.MultiVolume(target, mode="wb", volume=size, ext_digits=4) as mvf:
@@ -431,7 +412,8 @@ class Cli:
                             szf.writeall(src)
                         else:
                             szf.write(src)
-            return 0
+
+        return 0
 
     def run_append(self, args):
         sztarget: str = args.arcfile
